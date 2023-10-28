@@ -1,0 +1,8 @@
+flask
+flask_restful
+werkzeug
+requests
+python-dotenv
+APScheduler
+cryptography
+gunicorn
