@@ -4,10 +4,11 @@ The application is created using flask in python and accesses CUPS using python 
 
 # .env file
 A file with environment variables must be included in /app. Example below:
-KNET_API_USERNAME = 'api name thingy'
-KNET_API_PASSWORD = 'api password thingy' 
-AES_CRYPT_KEY = 'some random bytes' (32 bytes)
-INITIALIZATION_VECTOR = 'fewer random bytes' (16 bytes)
+  
+  KNET_API_USERNAME = 'api name thingy'
+  KNET_API_PASSWORD = 'api password thingy' 
+  AES_CRYPT_KEY = 'some random bytes' (32 bytes)
+  INITIALIZATION_VECTOR = 'fewer random bytes' (16 bytes)
 
 
 # TODO
