@@ -13,6 +13,7 @@ A file with environment variables must be included in /app. Example below:
 
 # TODO
 - [x] Cookie check. Needs to check login cookie before every print.
+- [x] Increase nginx file size limit for larger prints.
 - [ ] Check IV encryption. Currently we a using a static initialization vector
 - [ ] Prevent multi print. Refreshes to the page might resubmit the print form
 - [ ] Better frontend. Maybe bootstrap or tailwindcss.
