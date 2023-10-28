@@ -7,9 +7,9 @@ A file with environment variables must be included in /app. Example below:
   
     KNET_API_USERNAME = 'api name thingy'
     KNET_API_PASSWORD = 'api password thingy' 
-    AES_CRYPT_KEY = 'some random bytes' (32 bytes)
-    INITIALIZATION_VECTOR = 'fewer random bytes' (16 bytes)
-
+    AES_CRYPT_KEY = 'some random bytes'
+    INITIALIZATION_VECTOR = 'fewer random bytes'
+The AES_CRYPT_KEY should be 32 bytes when encoded as UTF-8, and the INITIALIZATION_VECTOR should be 16 bytes.
 
 # TODO
 - [x] Cookie check. Needs to check login cookie before every print.
