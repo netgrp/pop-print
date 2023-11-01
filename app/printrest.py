@@ -42,8 +42,6 @@ cipher = Cipher(algorithm, mode)
 
 UPLOAD_FOLDER = "/tmp/"
 ALLOWED_EXTENSIONS = {"pdf"}
-
-# lp options. May need to be customized for your printer!
 PRINTER = "default"  # Printer name from lpstat -p -d or 'default' for the system's default printer
 DUPLEX_OPTIONS = {"1sided": "1Sided", "2sided": "2Sided"}
 COLOR_OPTIONS = {"auto": "", "color": "Color", "grayscale": "Grayscale"}
