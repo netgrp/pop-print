@@ -63,124 +63,233 @@ api = Api(app)
 
 print_upload_form = """
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<style>
-body, html {
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POP Print</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
 
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    display:table;
-}
-body {
-    display:table-cell;
-    vertical-align:middle;
-}
-form {
-    display:table;/* shrinks to fit conntent */
-    margin:auto;
-}
-</style>
+    form {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    p {
+      margin: 0 0 20px;
+    }
+
+    #file { display: none }
+
+    input[type="file"],
+    input[type="text"],
+    input[type="number"],
+    input[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    input[type="radio"] {
+      margin-right: 8px;
+    }
+
+    input[type="submit"] {
+      background-color: #4caf50;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+
+    .file-upload {
+        margin: 0 10px 0 25px;
+    }
+
+    .file-upload input.upload {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        padding: 0;
+        z-index: 10;
+        font-size: 20px;
+        cursor: pointer;
+        height: 36px;
+        opacity: 0;
+        filter: alpha(opacity=0); 
+    }
+
+    #fileuploadurl{
+        border: none;
+        font-size: 12px;
+        padding-left: 0;
+        width: 250px; 
+    }
+  </style>
 </head>
 <body>
 
 <form action="" method="post" enctype="multipart/form-data">
-    <p>
-        Upload PDF to print: <br/>
-        <input type="file" name="uploadedPDF" accept=".pdf">
-    </p>
-    <p>
-        Duplex: <br/>
-        <input type="radio" name="duplex" value="1sided" > One sided<br>
-        <input type="radio" name="duplex" value="2sided" checked> Two sided<br>
-    </p>
-    <p>
-        Color mode: <br/>
-        <input type="radio" name="color" value="auto" checked> Auto<br>
-        <input type="radio" name="color" value="color"> Color<br>
-        <input type="radio" name="color" value="grayscale"> Grayscale<br>
-    </p>
-    <p>
-       Range: <br/>
-       <input type="text" name="range" placeholder="1-5,8,11-13">
-    </p>
-    <p>
-        Size: <br/>
-        <input type="radio" name="size" value="A4" checked> A4<br>
-        <input type="radio" name="size" value="A3"> A3<br>
-    </p>
-    <p>
-        Orientation: <br/>
-        <input type="radio" name="orientation" value="portrait" checked> Portrait<br>
-        <input type="radio" name="orientation" value="landscape"> Landscape<br>
-    </p>
-    <p>
-       Copies: <br/>
-       <input type="number" name="copies" placeholder="1">
-    </p>
-    <p>
-        <input type="submit" value="Print" name="print">
-    </p>
+  <p>
+    <h5>Upload PDF to print:</h1> <br/>
+    <div class="file-upload mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent mdl-button--colored mdl-color--green-500">
+    	<span>BROWSE</span>
+      	<input type="file" name="uploadedPDF" id="FileAttachment" class="upload" accept=".pdf" />
+    </div>
+    <input type="text" id="fileuploadurl" readonly placeholder="No file selected">
+	</div>
+
+  </p>
+  <p>
+    Duplex: <br/>
+    <input type="radio" name="duplex" id="one-sided" value="1sided"> <label for="one-sided">One sided</label><br>
+    <input type="radio" name="duplex" id="two-sided" value="2sided" checked> <label for="two-sided">Two sided</label><br>
+  </p>
+  <p>
+    Color mode: <br/>
+    <input type="radio" name="color" id="auto" value="auto" checked> <label for="auto">Auto</label><br>
+    <input type="radio" name="color" id="color" value="color"> <label for="color">Color</label><br>
+    <input type="radio" name="color" id="grayscale" value="grayscale"> <label for="grayscale">Grayscale</label><br>
+  </p>
+  <p>
+    Range: <br/>
+    <input type="text" name="range" placeholder="1-5,8,11-13">
+  </p>
+  <p>
+    Size: <br/>
+    <input type="radio" name="size" id="a4" value="A4" checked> <label for="a4">A4</label><br>
+    <input type="radio" name="size" id="a3" value="A3"> <label for="a3">A3</label><br>
+  </p>
+  <p>
+    Orientation: <br/>
+    <input type="radio" name="orientation" id="portrait" value="portrait" checked> <label for="portrait">Portrait</label><br>
+    <input type="radio" name="orientation" id="landscape" value="landscape"> <label for="landscape">Landscape</label><br>
+  </p>
+  <p>
+    Copies: <br/>
+    <input type="number" name="copies" placeholder="1">
+  </p>
+  <p>
+    <input type="submit" value="Print" name="print">
+  </p>
 </form>
 
+</body>
+<script> 
+document.getElementById("FileAttachment").onchange = function () {
+    document.getElementById("fileuploadurl").value = document.getElementById("FileAttachment").files[0].name;
+};
+</script>
+</html>
+"""
+
+login_form = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+
+        form {
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #ffffff;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[type="submit"] {
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>  
+    <form action="{url}" method="post">
+        <h1>Login</h1>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <input name="login" type="submit" value="Login">
+    </form>
 </body>
 </html>
 """
 
-login_form = """<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Login Page</title>
-                <style>
-                    body {
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        margin: 0;
-                    }
-                    
-                    form {
-                        text-align: center;
-                        padding: 20px;
-                        border: 1px solid #ccc;
-                        border-radius: 5px;
-                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-                    }
 
-                    label, input {
-                        display: block;
-                        margin: 10px 0;
-                    }
-                </style>
-            </head>
-            <body>  
-                <form action="{url}" method="post">
-                    <h1>Login</h1>
-                    <label for="username">Brugernavn:</label>
-                    <input type="text" id="username" name="username" required><br><br>
-                    <label for="password">Kodeord:</label>
-                    
-                    <input type="password" id="password" name="password" required><br><br>
-                    <input name="login" type="submit" value="Login">
-                </form>
-            </body>
-            </html>
-        """
-
-
-def printhtml(
-    duplex, color, page_range, orientation, size, copies, pdf, pdf_filename
-):
+def printhtml(duplex, color, page_range, orientation, size, copies, pdf, pdf_filename):
     command = ["/usr/bin/lp"]
 
     if PRINTER != "default":
         command.extend(["-d", PRINTER])
-
+    else:
+        command.extend(["-d", "Konica_Minolta"])
     if duplex != "none":
         command.extend(["-o", "KMDuplex=" + DUPLEX_OPTIONS[duplex]])
 
@@ -207,6 +316,7 @@ def printhtml(
 
     if ret.returncode != 0:
         err_msg = ret.stderr.decode("UTF-8").rstrip()
+        print("Printing error: {0}".format(err_msg))
         return "Printing error: {0}".format(err_msg), 500
     return None
 
@@ -292,8 +402,8 @@ def login_and_printhtml():
 
     return login_form.replace("{url}", url_for("login_and_printhtml_post"))
 
-def login():
 
+def login():
     login_cookie = request.cookies.get("login")
 
     # If cookie is set, check if it is valid
@@ -395,7 +505,6 @@ def login_and_printhtml_post():
         print("logging in")
         return login()
     elif "print" in request.form:
-
         login_cookie = request.cookies.get("login")
 
         # If cookie is set, check if it is valid
