@@ -11,8 +11,6 @@ use std::{
 use thiserror::Error;
 
 const UPLOAD_FOLDER: &str = "/tmp/";
-const CUPS_SERVER_HOST: Option<&str> = None;
-const PRINTER: &str = "Konica_Minolta";
 const DUPLEX_OPTIONS: LazyLock<HashMap<&str, &str>> =
     LazyLock::new(|| HashMap::from([("1sided", "1Sided"), ("2sided", "2Sided")]));
 const COLOR_OPTIONS: LazyLock<HashMap<&str, &str>> =
@@ -55,12 +53,6 @@ pub enum PrinterCommandError {
 impl<'a> PrinterCommand<'a> {
     pub fn build(options: PrintOptions<'_>, pdf: &'a [u8]) -> Self {
         let mut command = Command::new("lp" /*"/usr/bin/lp"*/);
-
-        if let Some(server) = CUPS_SERVER_HOST {
-            command.args(["-h", &server]);
-        }
-
-        command.args(["-d", PRINTER]);
 
         if options.duplex != "none" {
             command.args([
