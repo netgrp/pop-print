@@ -1,5 +1,6 @@
 use ipp::prelude::*;
 use std::{
+    borrow::Cow,
     collections::HashMap,
     io::Cursor,
     num::{ParseIntError, TryFromIntError},
@@ -54,27 +55,54 @@ pub enum PrintOptionsParseError {
     ParseIntError(#[from] ParseIntError),
     #[error("error converting integer: {0}")]
     TryFromIntError(#[from] TryFromIntError),
+    #[error("invalid option for {field}: {value}")]
+    InvalidPrintOption {
+        field: Cow<'static, str>,
+        value: Cow<'static, str>,
+    },
 }
 
-impl PrintOptions<'_> {
+impl<'a> PrintOptions<'a> {
     fn into_print_job_attributes(self) -> Result<Vec<IppAttribute>, PrintOptionsParseError> {
+        use PrintOptionsParseError::InvalidPrintOption;
+
         let mut attributes = Vec::new();
 
         if self.duplex != "none" {
             attributes.push(IppAttribute::new(
                 "KMDuplex",
-                DUPLEX_OPTIONS[self.duplex].clone(),
+                DUPLEX_OPTIONS
+                    .get(self.duplex)
+                    .ok_or(InvalidPrintOption {
+                        field: "duplex".into(),
+                        value: self.duplex.to_owned().into(),
+                    })?
+                    .clone(),
             ));
         }
 
         if self.color != "auto" {
             attributes.push(IppAttribute::new(
                 "SelectColor",
-                COLOR_OPTIONS[self.color].clone(),
+                COLOR_OPTIONS
+                    .get(self.color)
+                    .ok_or(InvalidPrintOption {
+                        field: "color".into(),
+                        value: self.color.to_owned().into(),
+                    })?
+                    .clone(),
             ));
         }
 
-        attributes.push(IppAttribute::new("PageSize", SIZE[self.size].clone()));
+        attributes.push(IppAttribute::new(
+            "PageSize",
+            SIZE.get(self.size)
+                .ok_or(InvalidPrintOption {
+                    field: "size".into(),
+                    value: self.size.to_owned().into(),
+                })?
+                .clone(),
+        ));
 
         if !self.page_range.is_empty() {
             for range in self.page_range.split(',') {
@@ -100,7 +128,13 @@ impl PrintOptions<'_> {
 
         attributes.push(IppAttribute::new(
             "orientation",
-            ORIENTATION[self.orientation].clone(),
+            ORIENTATION
+                .get(self.orientation)
+                .ok_or(InvalidPrintOption {
+                    field: "orientation".into(),
+                    value: self.orientation.to_owned().into(),
+                })?
+                .clone(),
         ));
 
         attributes.push(IppAttribute::new(
