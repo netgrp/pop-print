@@ -15,11 +15,12 @@ use serde::Deserialize;
 
 use crate::{
     auth::{Authentication, KNetApiCreds, LoginError},
-    print::PrinterCommand,
+    print::Printer,
 };
 
 struct AppState {
     auth: Authentication,
+    printer: Printer,
 }
 
 #[tokio::main]
@@ -39,8 +40,11 @@ async fn main() {
         .try_into()
         .unwrap();
 
+    let printer = Printer::new(env::var("PRINTER_URI").unwrap().parse().unwrap());
+
     let state = Arc::new(AppState {
         auth: Authentication::new(knet_api_creds, key.as_bytes(), initialization_vector).unwrap(),
+        printer,
     });
 
     let app = Router::new()
@@ -137,7 +141,7 @@ async fn print_action(
                 orientation: &orientation,
                 copies,
             };
-            match PrinterCommand::build(options, &file_contents).run() {
+            match state.printer.print(options, &file_contents).await {
                 Ok(()) => Ok(Redirect::to("/").into_response()),
                 Err(err) => {
                     eprintln!("error whilst printing: {err}");

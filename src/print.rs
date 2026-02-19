@@ -1,28 +1,43 @@
+use ipp::prelude::*;
 use std::{
     collections::HashMap,
-    fs::{self, File},
-    io::Write,
-    ops::{Deref, DerefMut},
-    path::Path,
-    process::Command,
+    io::Cursor,
+    num::{ParseIntError, TryFromIntError},
     sync::LazyLock,
-    time::UNIX_EPOCH,
 };
 use thiserror::Error;
 
-const UPLOAD_FOLDER: &str = "/tmp/";
-const DUPLEX_OPTIONS: LazyLock<HashMap<&str, &str>> =
-    LazyLock::new(|| HashMap::from([("1sided", "1Sided"), ("2sided", "2Sided")]));
-const COLOR_OPTIONS: LazyLock<HashMap<&str, &str>> =
-    LazyLock::new(|| HashMap::from([("auto", ""), ("color", "Color"), ("grayscale", "Grayscale")]));
-const ORIENTATION: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
+const DUPLEX_OPTIONS: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
     HashMap::from([
-        ("portrait", "orientation-requested=3"),
-        ("landscape", "orientation-requested=4"),
+        ("1sided", IppValue::Keyword("1Sided".to_string())),
+        ("2sided", IppValue::Keyword("2Sided".to_string())),
     ])
 });
-const SIZE: LazyLock<HashMap<&str, &str>> =
-    LazyLock::new(|| HashMap::from([("A4", "A4"), ("A3", "A3")]));
+const COLOR_OPTIONS: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
+    HashMap::from([
+        ("auto", IppValue::Keyword("Auto".to_string())),
+        ("color", IppValue::Keyword("Color".to_string())),
+        ("grayscale", IppValue::Keyword("Grayscale".to_string())),
+    ])
+});
+const ORIENTATION: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
+    HashMap::from([
+        (
+            "portrait",
+            IppValue::Keyword("orientation-requested=3".to_string()),
+        ),
+        (
+            "landscape",
+            IppValue::Keyword("orientation-requested=4".to_string()),
+        ),
+    ])
+});
+const SIZE: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
+    HashMap::from([
+        ("A4", IppValue::Keyword("A4".to_string())),
+        ("A3", IppValue::Keyword("A3".to_string())),
+    ])
+});
 
 pub struct PrintOptions<'a> {
     pub duplex: &'a str,
@@ -33,106 +48,95 @@ pub struct PrintOptions<'a> {
     pub copies: usize,
 }
 
-pub struct PrinterCommand<'a> {
-    command: Command,
-    pdf: &'a [u8],
+#[derive(Debug, Error)]
+pub enum PrintOptionsParseError {
+    #[error("error parsing integer: {0}")]
+    ParseIntError(#[from] ParseIntError),
+    #[error("error converting integer: {0}")]
+    TryFromIntError(#[from] TryFromIntError),
+}
+
+impl PrintOptions<'_> {
+    fn into_print_job_attributes(self) -> Result<Vec<IppAttribute>, PrintOptionsParseError> {
+        let mut attributes = Vec::new();
+
+        if self.duplex != "none" {
+            attributes.push(IppAttribute::new(
+                "KMDuplex",
+                DUPLEX_OPTIONS[self.duplex].clone(),
+            ));
+        }
+
+        if self.color != "auto" {
+            attributes.push(IppAttribute::new(
+                "SelectColor",
+                COLOR_OPTIONS[self.color].clone(),
+            ));
+        }
+
+        attributes.push(IppAttribute::new("PageSize", SIZE[self.size].clone()));
+
+        if !self.page_range.is_empty() {
+            for range in self.page_range.split(',') {
+                if let Some((min, max)) = range.split_once('-') {
+                    let min = min.parse()?;
+                    let max = max.parse()?;
+                    attributes.push(IppAttribute::new(
+                        "page-ranges",
+                        IppValue::RangeOfInteger { min, max },
+                    ));
+                } else {
+                    let page = range.parse()?;
+                    attributes.push(IppAttribute::new(
+                        "page-ranges",
+                        IppValue::RangeOfInteger {
+                            min: page,
+                            max: page,
+                        },
+                    ));
+                }
+            }
+        }
+
+        attributes.push(IppAttribute::new(
+            "orientation",
+            ORIENTATION[self.orientation].clone(),
+        ));
+
+        attributes.push(IppAttribute::new(
+            IppAttribute::COPIES,
+            IppValue::Integer(self.copies.try_into()?),
+        ));
+
+        Ok(attributes)
+    }
+}
+
+pub struct Printer {
+    client: AsyncIppClient,
 }
 
 #[derive(Debug, Error)]
-pub enum PrinterCommandError {
-    #[error("error spawning command: {0}")]
-    Spawn(std::io::Error),
-    #[error("error whilst waiting for command: {0}")]
-    WaitForFinish(std::io::Error),
-    #[error("lp exited with non-zero status")]
-    Lp,
-    #[error("error saving input file: {0}")]
-    InputFile(std::io::Error),
+pub enum PrintError {
+    #[error("ipp error: {0}")]
+    IppError(#[from] IppError),
+    #[error("error parsing print options: {0}")]
+    PrintOptionsParseError(#[from] PrintOptionsParseError),
 }
 
-impl<'a> PrinterCommand<'a> {
-    pub fn build(options: PrintOptions<'_>, pdf: &'a [u8]) -> Self {
-        let mut command = Command::new("lp" /*"/usr/bin/lp"*/);
-
-        if options.duplex != "none" {
-            command.args([
-                "-o",
-                &format!("KMDuplex={}", DUPLEX_OPTIONS[options.duplex]),
-            ]);
-        }
-
-        if options.color != "auto" {
-            command.args([
-                "-o",
-                &format!("SelectColor={}", COLOR_OPTIONS[options.color]),
-            ]);
-        }
-
-        command.args(["-o", &format!("PageSize={}", SIZE[options.size])]);
-
-        if !options.page_range.is_empty() {
-            command.args(["-P", options.page_range]);
-        }
-
-        command.args(["-o", ORIENTATION[options.orientation]]);
-
-        command.args(["-n", &options.copies.to_string()]);
-
-        command.arg("--");
-
-        PrinterCommand { command, pdf }
-    }
-
-    pub fn run(self) -> Result<(), PrinterCommandError> {
-        use PrinterCommandError::*;
-
-        let Self { mut command, pdf } = self;
-
-        let file_name = UNIX_EPOCH.elapsed().unwrap().as_millis().to_string();
-        let file_path = Path::new(UPLOAD_FOLDER).join(file_name);
-
-        let mut file = RemoveOnDrop::create_new(file_path.clone()).map_err(InputFile)?;
-        file.write_all(pdf).map_err(InputFile)?;
-
-        command.arg(file_path);
-
-        let mut child = command.spawn().map_err(Spawn)?;
-        let status = child.wait().map_err(WaitForFinish)?;
-        if status.success() {
-            eprintln!("successfully printed");
-            Ok(())
-        } else {
-            Err(Lp)
+impl Printer {
+    pub fn new(uri: Uri) -> Self {
+        Printer {
+            client: AsyncIppClient::new(uri.clone()),
         }
     }
-}
 
-struct RemoveOnDrop<P: AsRef<Path>>(P, File);
-
-impl<P: AsRef<Path>> RemoveOnDrop<P> {
-    fn create_new(path: P) -> std::io::Result<Self> {
-        let file = File::create_new(&path)?;
-        Ok(Self(path, file))
-    }
-}
-
-impl<P: AsRef<Path>> Deref for RemoveOnDrop<P> {
-    type Target = File;
-
-    fn deref(&self) -> &Self::Target {
-        &self.1
-    }
-}
-
-impl<P: AsRef<Path>> DerefMut for RemoveOnDrop<P> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.1
-    }
-}
-
-impl<P: AsRef<Path>> Drop for RemoveOnDrop<P> {
-    fn drop(&mut self) {
-        let RemoveOnDrop(path, _) = self;
-        let _ = fs::remove_file(path);
+    pub async fn print(&self, options: PrintOptions<'_>, payload: &[u8]) -> Result<(), PrintError> {
+        let payload = IppPayload::new(Cursor::new(Box::<[_]>::from(payload)));
+        let req = IppOperationBuilder::print_job(self.client.uri().clone(), payload)
+            .attributes(options.into_print_job_attributes()?)
+            .build();
+        self.client.send(req).await?;
+        Ok(())
     }
 }
