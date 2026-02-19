@@ -41,11 +41,11 @@ const SIZE: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
 });
 
 pub struct PrintOptions<'a> {
-    pub duplex: &'a str,
-    pub color: &'a str,
-    pub size: &'a str,
-    pub page_range: &'a str,
-    pub orientation: &'a str,
+    pub duplex: Cow<'a, str>,
+    pub color: Cow<'a, str>,
+    pub size: Cow<'a, str>,
+    pub page_range: Cow<'a, str>,
+    pub orientation: Cow<'a, str>,
     pub copies: usize,
 }
 
@@ -58,7 +58,7 @@ pub enum PrintOptionsParseError {
     #[error("invalid option for {field}: {value}")]
     InvalidPrintOption {
         field: Cow<'static, str>,
-        value: Cow<'static, str>,
+        value: String,
     },
 }
 
@@ -72,10 +72,10 @@ impl<'a> PrintOptions<'a> {
             attributes.push(IppAttribute::new(
                 "KMDuplex",
                 DUPLEX_OPTIONS
-                    .get(self.duplex)
+                    .get(self.duplex.as_ref())
                     .ok_or(InvalidPrintOption {
                         field: "duplex".into(),
-                        value: self.duplex.to_owned().into(),
+                        value: self.duplex.into_owned(),
                     })?
                     .clone(),
             ));
@@ -85,10 +85,10 @@ impl<'a> PrintOptions<'a> {
             attributes.push(IppAttribute::new(
                 "SelectColor",
                 COLOR_OPTIONS
-                    .get(self.color)
+                    .get(self.color.as_ref())
                     .ok_or(InvalidPrintOption {
                         field: "color".into(),
-                        value: self.color.to_owned().into(),
+                        value: self.color.into_owned(),
                     })?
                     .clone(),
             ));
@@ -96,10 +96,10 @@ impl<'a> PrintOptions<'a> {
 
         attributes.push(IppAttribute::new(
             "PageSize",
-            SIZE.get(self.size)
+            SIZE.get(self.size.as_ref())
                 .ok_or(InvalidPrintOption {
                     field: "size".into(),
-                    value: self.size.to_owned().into(),
+                    value: self.size.into_owned(),
                 })?
                 .clone(),
         ));
@@ -129,10 +129,10 @@ impl<'a> PrintOptions<'a> {
         attributes.push(IppAttribute::new(
             "orientation",
             ORIENTATION
-                .get(self.orientation)
+                .get(self.orientation.as_ref())
                 .ok_or(InvalidPrintOption {
                     field: "orientation".into(),
-                    value: self.orientation.to_owned().into(),
+                    value: self.orientation.into_owned(),
                 })?
                 .clone(),
         ));
