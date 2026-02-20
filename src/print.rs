@@ -23,14 +23,8 @@ const COLOR_OPTIONS: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
 });
 const ORIENTATION: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
     HashMap::from([
-        (
-            "portrait",
-            IppValue::Keyword("orientation-requested=3".to_string()),
-        ),
-        (
-            "landscape",
-            IppValue::Keyword("orientation-requested=4".to_string()),
-        ),
+        ("portrait", IppValue::Integer(3)),
+        ("landscape", IppValue::Integer(4)),
     ])
 });
 const SIZE: LazyLock<HashMap<&str, IppValue>> = LazyLock::new(|| {
