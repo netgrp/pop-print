@@ -1,6 +1,6 @@
 # pop-print
 This is an implementation for a print server for our dorm. It uses CUPS for printing from a local server. 
-The application is created using flask in python and accesses CUPS using python subcommands and the lp command.
+The application is created using axum in Rust and printing using the ipp.rs to submit jubs to CUPS.
 
 # .env file
 A file with environment variables must be included in /app. Example below:
@@ -9,6 +9,7 @@ A file with environment variables must be included in /app. Example below:
     KNET_API_PASSWORD = 'api password thingy' 
     AES_CRYPT_KEY = 'some random bytes'
     INITIALIZATION_VECTOR = 'fewer random bytes'
+    PRINTER_URI = 'http://localhost:631/printers/PRINTER_NAME_HERE'
 The AES_CRYPT_KEY should be 32 bytes when encoded as UTF-8, and the INITIALIZATION_VECTOR should be 16 bytes.
 
 # TODO
