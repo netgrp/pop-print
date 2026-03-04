@@ -1,17 +1,13 @@
 # POP Print service
-# To be located at /etc/systemd/system/pop-print.service
-# Remember to set passwords for K-Net API here.
 
 [Unit]
-Description=Gunicorn instance to serve pop-print
+Description=pop-print web print service
 After=network.target
 
 [Service]
 User=pop-print
-Group=nginx
-WorkingDirectory=/opt/pop-print/app
-Environment="PATH=/opt/pop-print/printenv/bin"
-ExecStart=/opt/pop-print/printenv/bin/gunicorn --workers 3 -b 0.0.0.0:8000 printrest:app
+Group=pop-print
+ExecStart=/usr/bin/pop-print
 
 [Install]
 WantedBy=multi-user.target
