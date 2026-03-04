@@ -27,6 +27,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
+    #[cfg(feature = "dotenv")]
     dotenv::dotenv().unwrap();
 
     let knet_api_creds = KNetApiCreds {

@@ -2,8 +2,11 @@
 This is an implementation for a print server for our dorm. It uses CUPS for printing from a local server. 
 The application is created using axum in Rust and printing using the ipp.rs to submit jubs to CUPS.
 
-# .env file
-A file with environment variables must be included in /app. Example below:
+# Environment variables
+
+The program requires some environment variables to be set.
+
+If the `dotenv` feature is enabled, `.env` in the pwd will be loaded.
   
     KNET_API_USERNAME = 'api name thingy'
     KNET_API_PASSWORD = 'api password thingy' 
