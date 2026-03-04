@@ -8,6 +8,7 @@ After=network.target
 User=pop-print
 Group=pop-print
 ExecStart=/usr/bin/pop-print
+EnvironmentFile=-/etc/pop-print.env
 
 [Install]
 WantedBy=multi-user.target
